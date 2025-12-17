@@ -1,7 +1,9 @@
 import Product from "../models/Product.js";
 import Category from "../models/Category.js";
 import slugify from "slugify";
+import mongoose from "mongoose";
 import cloudinary from "../config/cloudinary.js";
+import Review from "../models/Review.js";
 
 /* ================= CREATE PRODUCT ================= */
 export const createProduct = async (req, res) => {
@@ -10,6 +12,10 @@ export const createProduct = async (req, res) => {
 
     if (!name || !price || !category) {
       return res.status(400).json({ message: "Required fields missing" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(category)) {
+      return res.status(400).json({ message: "Invalid category ID" });
     }
 
     const catExists = await Category.findById(category);
@@ -59,29 +65,28 @@ export const createProduct = async (req, res) => {
     res.status(201).json(product);
   } catch (error) {
     console.error("CREATE PRODUCT ERROR:", error);
-    res
-      .status(500)
-      .json({ message: "Failed to create product", error: error.message });
+    res.status(500).json({
+      message: "Failed to create product",
+      error: error.message,
+    });
   }
 };
 
-/* ================= GET ALL PRODUCTS ================= */
+/* ================= GET ALL PRODUCTS with Review Count ================= */
 export const getProducts = async (req, res) => {
   try {
-    const { category } = req.query;
-    let query = { isActive: true };
-
-    if (category) {
-      const cat = await Category.findOne({ slug: category });
-      if (cat) query.category = cat._id;
-      else return res.status(200).json([]);
-    }
-
-    const products = await Product.find(query)
+    const products = await Product.find()
       .populate("category", "name slug")
       .sort({ createdAt: -1 });
 
-    res.status(200).json(products);
+    const updated = await Promise.all(
+      products.map(async (p) => {
+        const count = await Review.countDocuments({ productId: p._id });
+        return { ...p._doc, reviewsCount: count };
+      })
+    );
+
+    res.status(200).json(updated);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch products" });
   }
@@ -91,33 +96,40 @@ export const getProducts = async (req, res) => {
 export const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
+    let product;
 
-    const product = await Product.findById(id).populate(
-      "category",
-      "name slug"
-    );
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      product = await Product.findById(id).populate("category", "name slug");
+    } else {
+      product = await Product.findOne({ slug: id }).populate("category", "name slug");
+    }
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    res.json(product);
+    // Add Review Count
+    const reviewsCount = await Review.countDocuments({ productId: product._id });
+
+    res.json({ ...product._doc, reviewsCount });
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch product" });
   }
 };
 
-/* ================= GET PRODUCTS BY CATEGORY ================= */
+/* ================= GET PRODUCTS BY CATEGORY SLUG ================= */
 export const getProductsByCategory = async (req, res) => {
   try {
     const { slug } = req.params;
 
-    const products = await Product.find({ isActive: true }).populate({
-      path: "category",
-      match: { slug },
-    });
+    const products = await Product.find({ isActive: true })
+      .populate({
+        path: "category",
+        match: { slug },
+      });
 
     const filtered = products.filter((p) => p.category !== null);
+
     res.json(filtered);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch category products" });
@@ -128,16 +140,25 @@ export const getProductsByCategory = async (req, res) => {
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const product = await Product.findById(id);
+
+    let product;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      product = await Product.findById(id);
+    } else {
+      product = await Product.findOne({ slug: id });
+    }
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    const { name, description, price, stock, category, isActive, featured } =
-      req.body;
+    const { name, description, price, stock, category, isActive, featured } = req.body;
 
-    // Handle image uploads
+    if (category && !mongoose.Types.ObjectId.isValid(category)) {
+      return res.status(400).json({ message: "Invalid category ID" });
+    }
+
+    // Handle new images if uploaded
     let images = product.images;
     if (req.files && req.files.length > 0) {
       images = [];
@@ -173,9 +194,10 @@ export const updateProduct = async (req, res) => {
     res.json(product);
   } catch (error) {
     console.error("UPDATE PRODUCT ERROR:", error);
-    res
-      .status(500)
-      .json({ message: "Failed to update product", error: error.message });
+    res.status(500).json({
+      message: "Failed to update product",
+      error: error.message,
+    });
   }
 };
 
@@ -184,7 +206,13 @@ export const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const product = await Product.findByIdAndDelete(id);
+    let product;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      product = await Product.findByIdAndDelete(id);
+    } else {
+      product = await Product.findOneAndDelete({ slug: id });
+    }
+
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
@@ -213,7 +241,6 @@ export const getFeaturedProducts = async (req, res) => {
       products,
     });
   } catch (error) {
-    console.error("FEATURED PRODUCTS ERROR:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch featured products",

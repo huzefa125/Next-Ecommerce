@@ -50,6 +50,17 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    // ⭐ NEW FIELDS ADDED
+    averageRating: {
+      type: Number,
+      default: 0,
+    },
+
+    reviewsCount: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
