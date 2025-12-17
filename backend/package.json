@@ -1,0 +1,41 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon server.js",
+    "prod": "cross-env NODE_ENV=production node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.8.0",
+    "colors": "^1.4.0",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "hpp": "^0.2.3",
+    "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^0.561.0",
+    "mongoose": "^9.0.1",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "nodemailer": "^7.0.11",
+    "react-hot-toast": "^2.6.0",
+    "slugify": "^1.6.6",
+    "xss-clean": "^0.1.4"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "nodemon": "^3.1.11"
+  }
+}
