@@ -9,6 +9,7 @@ import productRoutes from "./routes/productRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js"
 
 import cors from "cors";
 import rateLimit from "express-rate-limit";
@@ -60,6 +61,7 @@ app.use("/uploads",express.static("uploads"));
 app.use("/api/carts",cartRoutes);
 app.use("/categories",categoryRoutes);
 app.use("/orders",orderRoutes);
+app.use("/reviews",reviewRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is running");
