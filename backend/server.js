@@ -10,6 +10,7 @@ import cartRoutes from "./routes/cartRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js"
+import couponRoutes from "./routes/couponRoutes.js";
 
 import cors from "cors";
 import rateLimit from "express-rate-limit";
@@ -62,6 +63,7 @@ app.use("/api/carts",cartRoutes);
 app.use("/categories",categoryRoutes);
 app.use("/orders",orderRoutes);
 app.use("/reviews",reviewRoutes);
+app.use("/coupons", couponRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is running");

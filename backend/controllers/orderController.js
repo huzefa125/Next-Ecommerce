@@ -1,71 +1,111 @@
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
+import Coupon from "../models/Coupon.js";
 
 // ==========================
 // 📌 PLACE ORDER
 // ==========================
 export const placeOrder = async (req, res) => {
   try {
-    const { items, total } = req.body;
+    const { items, couponCode } = req.body;
     const userId = req.user.id;
 
     if (!items || items.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Order must contain at least one item",
-      });
+      return res.status(400).json({ message: "Cart is empty" });
     }
 
-    // 1️⃣ Check stock for each item
+    let subTotal = 0;
+
+    // ✅ Stock check + subtotal calculation
     for (let item of items) {
       const product = await Product.findById(item.productId);
 
       if (!product) {
-        return res.status(400).json({
-          success: false,
-          message: `Product not found: ${item.productId}`,
-        });
+        return res.status(400).json({ message: "Product not found" });
       }
 
       if (product.stock < item.quantity) {
         return res.status(400).json({
-          success: false,
-          message: `Not enough stock for ${product.name}. Available: ${product.stock}`,
+          message: `Not enough stock for ${product.name}`,
         });
       }
+
+      subTotal += product.price * item.quantity;
     }
 
-    // 2️⃣ Deduct stock after validation
+    let discount = 0;
+    let appliedCoupon = null;
+
+    // ✅ Coupon validation (optional)
+    if (couponCode) {
+      const coupon = await Coupon.findOne({
+        code: couponCode.toUpperCase(),
+        isActive: true,
+      });
+
+      if (!coupon) {
+        return res.status(400).json({ message: "Invalid coupon" });
+      }
+
+      if (coupon.usedBy.includes(userId)) {
+        return res.status(400).json({ message: "Coupon already used" });
+      }
+
+      if (new Date(coupon.expiryDate) < new Date()) {
+        return res.status(400).json({ message: "Coupon expired" });
+      }
+
+      if (subTotal < coupon.minOrderValue) {
+        return res.status(400).json({
+          message: `Minimum order ₹${coupon.minOrderValue}`,
+        });
+      }
+
+      if (coupon.discountType === "percentage") {
+        discount = (subTotal * coupon.discountValue) / 100;
+        if (coupon.maxDiscount && discount > coupon.maxDiscount) {
+          discount = coupon.maxDiscount;
+        }
+      } else {
+        discount = coupon.discountValue;
+      }
+
+      coupon.usedCount += 1;
+      coupon.usedBy.push(userId);
+      await coupon.save();
+
+      appliedCoupon = coupon.code;
+    }
+
+    const totalPaid = Math.max(subTotal - discount, 0);
+
+    // ✅ Deduct stock
     for (let item of items) {
       await Product.findByIdAndUpdate(item.productId, {
         $inc: { stock: -item.quantity },
       });
     }
 
-    // 3️⃣ Create order
-    const newOrder = await Order.create({
+    // ✅ Create Order
+    const order = await Order.create({
       userId,
       items,
-      total,
+      subTotal,
+      discount,
+      coupon: appliedCoupon,
+      totalPaid,
       status: "pending",
     });
 
-    return res.status(200).json({
+    res.status(201).json({
       success: true,
       message: "Order placed successfully",
-      order: newOrder,
+      order,
     });
-
   } catch (error) {
-    console.log("Order Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error while placing order",
-      error: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
-
 
 // ==========================
 // 📌 GET USER ORDERS
@@ -74,25 +114,28 @@ export const getUserOrders = async (req, res) => {
   try {
     const orders = await Order.find({ userId: req.user.id })
       .sort({ createdAt: -1 })
-      .populate("items.productId", "name price image");
+      .populate("items.productId", "name price");
 
-    return res.status(200).json({
-      success: true,
-      orders,
+    // Ensure totalPaid is set for old orders
+    orders.forEach(order => {
+      if (order.totalPaid == null) {
+        // If subTotal missing, calculate from items
+        if (!order.subTotal) {
+          order.subTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        }
+        order.totalPaid = Math.max(order.subTotal - (order.discount || 0), 0);
+        // Don't save to avoid validation errors, just set for response
+      }
     });
+
+    res.json({ success: true, orders });
   } catch (error) {
-    console.log("Fetch Orders Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch orders",
-      error: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-
 // ==========================
-// 📌 UPDATE ORDER STATUS (ADMIN)
+// 📌 UPDATE ORDER STATUS (Admin)
 // ==========================
 export const updateOrderStatus = async (req, res) => {
   try {
@@ -102,54 +145,39 @@ export const updateOrderStatus = async (req, res) => {
     const order = await Order.findByIdAndUpdate(id, { status }, { new: true });
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
+      return res.status(404).json({ message: "Order not found" });
     }
 
-    return res.status(200).json({
-      success: true,
-      message: "Order status updated",
-      order,
-    });
-
+    res.json({ success: true, message: "Order status updated", order });
   } catch (error) {
-    console.log("Update Order Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to update order",
-      error: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
 // ==========================
-// 📌 GET ALL ORDERS (ADMIN)
+// 📌 GET ALL ORDERS (Admin)
 // ==========================
 export const getAllOrders = async (req, res) => {
   try {
-    if (req.user.role !== "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied",
-      });
-    }
-
-    const orders = await Order.find()
+    const orders = await Order.find({})
       .sort({ createdAt: -1 })
-      .populate("items.productId", "name price image")
-      .populate("userId", "username email");
+      .populate("userId", "username email")
+      .populate("items.productId", "name price");
 
-    return res.status(200).json({
-      success: true,
-      orders,
+    // Ensure totalPaid is set for old orders
+    orders.forEach(order => {
+      if (order.totalPaid == null) {
+        // If subTotal missing, calculate from items
+        if (!order.subTotal) {
+          order.subTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        }
+        order.totalPaid = Math.max(order.subTotal - (order.discount || 0), 0);
+        // Don't save to avoid validation errors, just set for response
+      }
     });
+
+    res.json({ success: true, orders });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch orders",
-      error: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };

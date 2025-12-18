@@ -125,3 +125,12 @@ export const logout = (req, res) => {
 
   res.json({ message: "Logout successful" });
 };
+
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}).select("-password").sort({ createdAt: -1 });
+    res.json({ success: true, users });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
