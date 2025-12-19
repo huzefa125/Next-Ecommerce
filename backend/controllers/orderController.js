@@ -116,17 +116,42 @@ export const getUserOrders = async (req, res) => {
       .sort({ createdAt: -1 })
       .populate("items.productId", "name price");
 
-    // Ensure totalPaid is set for old orders
-    orders.forEach(order => {
-      if (order.totalPaid == null) {
-        // If subTotal missing, calculate from items
-        if (!order.subTotal) {
-          order.subTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        }
-        order.totalPaid = Math.max(order.subTotal - (order.discount || 0), 0);
-        // Don't save to avoid validation errors, just set for response
+    // Fix discount calculation for all orders
+    for (let order of orders) {
+      // Calculate subTotal if missing
+      if (!order.subTotal) {
+        order.subTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       }
-    });
+
+      // For orders with coupon but no discount calculated
+      if (order.coupon && (!order.discount || order.discount === 0)) {
+        const coupon = await Coupon.findOne({ code: order.coupon });
+        if (coupon) {
+          let discount = 0;
+          if (coupon.discountType === "percentage") {
+            discount = (order.subTotal * coupon.discountValue) / 100;
+            if (coupon.maxDiscount && discount > coupon.maxDiscount) {
+              discount = coupon.maxDiscount;
+            }
+          } else {
+            discount = Math.min(coupon.discountValue, order.subTotal);
+          }
+          order.discount = discount;
+          order.totalPaid = Math.max(order.subTotal - discount, 0);
+          
+          // Save the updated order
+          try {
+            await order.save();
+          } catch (saveError) {
+            // If save fails, at least return the correct values in response
+            console.log("Could not save order:", saveError.message);
+          }
+        }
+      } else if (order.totalPaid == null) {
+        // Recalculate totalPaid if missing
+        order.totalPaid = Math.max(order.subTotal - (order.discount || 0), 0);
+      }
+    }
 
     res.json({ success: true, orders });
   } catch (error) {
@@ -165,16 +190,33 @@ export const getAllOrders = async (req, res) => {
       .populate("items.productId", "name price");
 
     // Ensure totalPaid is set for old orders
-    orders.forEach(order => {
+    for (let order of orders) {
       if (order.totalPaid == null) {
         // If subTotal missing, calculate from items
         if (!order.subTotal) {
           order.subTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         }
         order.totalPaid = Math.max(order.subTotal - (order.discount || 0), 0);
-        // Don't save to avoid validation errors, just set for response
+        // Don't save
+      } else if (order.discount == 0 && order.coupon) {
+        // Recalculate discount for old orders with coupon but no discount
+        const coupon = await Coupon.findOne({ code: order.coupon });
+        if (coupon) {
+          let discount = 0;
+          if (coupon.discountType === "percentage") {
+            discount = (order.subTotal * coupon.discountValue) / 100;
+            if (coupon.maxDiscount && discount > coupon.maxDiscount) {
+              discount = coupon.maxDiscount;
+            }
+          } else {
+            discount = coupon.discountValue;
+          }
+          order.discount = discount;
+          order.totalPaid = Math.max(order.subTotal - discount, 0);
+          await order.save();
+        }
       }
-    });
+    }
 
     res.json({ success: true, orders });
   } catch (error) {

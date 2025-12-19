@@ -75,7 +75,28 @@ export const createProduct = async (req, res) => {
 /* ================= GET ALL PRODUCTS with Review Count ================= */
 export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find()
+    const { category: categoryParam } = req.query;
+
+    // Build filter based on optional category parameter (slug or id)
+    let filter = {};
+    if (categoryParam) {
+      let cat = null;
+      if (mongoose.Types.ObjectId.isValid(categoryParam)) {
+        cat = await Category.findById(categoryParam);
+      } else {
+        cat = await Category.findOne({ slug: categoryParam });
+      }
+
+      // If category not found, return empty list
+      if (!cat) {
+        return res.status(200).json({ products: [] });
+      }
+
+      filter.category = cat._id;
+      filter.isActive = true;
+    }
+
+    const products = await Product.find(filter)
       .populate("category", "name slug")
       .sort({ createdAt: -1 });
 
@@ -85,6 +106,9 @@ export const getProducts = async (req, res) => {
         return { ...p._doc, reviewsCount: count };
       })
     );
+
+    // Return object with products when filtered by category (frontend expects this shape), otherwise return array for backwards compatibility
+    if (categoryParam) return res.status(200).json({ products: updated });
 
     res.status(200).json(updated);
   } catch (error) {
