@@ -20,7 +20,7 @@ const metals = [
   {
     name: "BRONZE",
     hindi: "कांसा",
-    img1: "hhttps://imgs.search.brave.com/yCl3AuzJKj6T0Dls6YhuMWVu8xOxYOsvYv9RBMGfEsU/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9ydWtt/aW5pbTIuZmxpeGNh/cnQuY29tL2ltYWdl/LzMxMi8zMTIveGlm/MHEvZGlubmVyLXNl/dC90L3QvbS9uby02/LWJyb256ZS1tYXR0/ZS1maW5pc2hlZC11/dGVuc2lscy1tYXN0/ZXJzLW9yaWdpbmFs/LWltYWdwZ3lxc3hn/anNwaHEuanBlZz9x/PTcwJmNyb3A9ZmFs/c2U",
+    img1: "https://imgs.search.brave.com/yCl3AuzJKj6T0Dls6YhuMWVu8xOxYOsvYv9RBMGfEsU/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9ydWtt/aW5pbTIuZmxpeGNh/cnQuY29tL2ltYWdl/LzMxMi8zMTIveGlm/MHEvZGlubmVyLXNl/dC90L3QvbS9uby02/LWJyb256ZS1tYXR0/ZS1maW5pc2hlZC11/dGVuc2lscy1tYXN0/ZXJzLW9yaWdpbmFs/LWltYWdwZ3lxc3hn/anNwaHEuanBlZz9x/PTcwJmNyb3A9ZmFs/c2U",
     img2: "https://imgs.search.brave.com/xm9a3yvhxZQkHZrjU0AQQKpm5c5smknKtg0s1-AAdg0/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pLnBp/bmltZy5jb20vb3Jp/Z2luYWxzLzQwL2Zl/LzJlLzQwZmUyZTUx/OGU2Yjg0MDQwOWFk/MjMxM2Q2ODVlZTZk/LmpwZw",
     bg: "#8d5e2a",
   },
