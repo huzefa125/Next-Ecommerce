@@ -37,6 +37,9 @@ app.use(helmet());
 app.use(compression());
 app.use(morgan('combined'));
 
+// Trust proxy for rate limiting (important for hosting platforms like Render)
+app.set('trust proxy', 1);
+
 app.use(express.json());
 
 // ==========================================
