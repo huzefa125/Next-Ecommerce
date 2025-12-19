@@ -5,7 +5,7 @@ export const getMyProfile = async (req, res) => {
     try {
         const userId = req.user.id;
 
-        const profile = await Profile.findOne({ user: userId });
+        const profile = await Profile.findOne({ user: userId }).populate('categories', 'name');
 
         if (!profile)
             return res.status(200).json({ success: true, profile: null });
@@ -29,6 +29,8 @@ export const completeProfile = async (req, res) => {
             country: req.body.country,
             bio: req.body.bio || "",
             profileImage: req.body.profileImage || "",
+            categories: req.body.categories || [],
+            location: req.body.location || "",
             isComplete: true
         };
 

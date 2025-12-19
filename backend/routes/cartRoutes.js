@@ -5,6 +5,7 @@ import {
   updateQty,
   removeItem,
   clearCart,
+  updateCartLocation,
 } from "../controllers/cartController.js";
 import { isAuth } from "../middleware/auth.js";
 
@@ -24,5 +25,8 @@ router.delete("/remove/:productId", isAuth, removeItem);
 
 // CLEAR CART
 router.delete("/clear", isAuth, clearCart);
+
+// UPDATE CART LOCATION
+router.patch("/location", isAuth, updateCartLocation);
 
 export default router;

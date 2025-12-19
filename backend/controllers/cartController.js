@@ -134,3 +134,19 @@ export const clearCart = async (req, res) => {
     res.status(500).json({ message: "Failed to clear cart" });
   }
 };
+
+// UPDATE CART LOCATION
+export const updateCartLocation = async (req, res) => {
+  try {
+    const { location } = req.body;
+
+    const cart = await Cart.findOne({ user: req.user._id });
+    if (!cart) return res.status(404).json({ message: "Cart not found" });
+
+    cart.location = location || "";
+    await cart.save();
+    res.json({ message: "Cart location updated" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update cart location" });
+  }
+};

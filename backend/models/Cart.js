@@ -19,7 +19,9 @@ const cartSchema = new mongoose.Schema({
         ref:"User",
         unique:true,
         required:true,
-    },items : [cartItemSchema],
+    },
+    items : [cartItemSchema],
+    location: { type: String, default: '' },
 },{timestamps:true});
 
 export default mongoose.model("Cart",cartSchema);

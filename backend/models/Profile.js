@@ -13,6 +13,8 @@ const profileSchema = new mongoose.Schema({
     country: { type: String, required: true },
     bio: { type: String, default: '' },
     profileImage: { type: String, default: '' },
+    categories: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Category' }],
+    location: { type: String, default: '' },
     isComplete: { type: Boolean, default: false },
 }, { timestamps: true });
 

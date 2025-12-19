@@ -2,9 +2,9 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import Coupon from "../models/Coupon.js";
 
-// ==========================
-// 📌 PLACE ORDER
-// ==========================
+/* =====================================================
+   📌 PLACE ORDER
+===================================================== */
 export const placeOrder = async (req, res) => {
   try {
     const { items, couponCode } = req.body;
@@ -16,8 +16,8 @@ export const placeOrder = async (req, res) => {
 
     let subTotal = 0;
 
-    // ✅ Stock check + subtotal calculation
-    for (let item of items) {
+    // ✅ STOCK CHECK + SUBTOTAL
+    for (const item of items) {
       const product = await Product.findById(item.productId);
 
       if (!product) {
@@ -36,7 +36,7 @@ export const placeOrder = async (req, res) => {
     let discount = 0;
     let appliedCoupon = null;
 
-    // ✅ Coupon validation (optional)
+    /* ================= COUPON ================= */
     if (couponCode) {
       const coupon = await Coupon.findOne({
         code: couponCode.toUpperCase(),
@@ -67,7 +67,7 @@ export const placeOrder = async (req, res) => {
           discount = coupon.maxDiscount;
         }
       } else {
-        discount = coupon.discountValue;
+        discount = Math.min(coupon.discountValue, subTotal);
       }
 
       coupon.usedCount += 1;
@@ -79,14 +79,14 @@ export const placeOrder = async (req, res) => {
 
     const totalPaid = Math.max(subTotal - discount, 0);
 
-    // ✅ Deduct stock
-    for (let item of items) {
+    /* ================= STOCK DEDUCT ================= */
+    for (const item of items) {
       await Product.findByIdAndUpdate(item.productId, {
         $inc: { stock: -item.quantity },
       });
     }
 
-    // ✅ Create Order
+    /* ================= CREATE ORDER ================= */
     const order = await Order.create({
       userId,
       items,
@@ -107,49 +107,29 @@ export const placeOrder = async (req, res) => {
   }
 };
 
-// ==========================
-// 📌 GET USER ORDERS
-// ==========================
+/* =====================================================
+   📌 GET USER ORDERS
+===================================================== */
 export const getUserOrders = async (req, res) => {
   try {
     const orders = await Order.find({ userId: req.user.id })
       .sort({ createdAt: -1 })
-      .populate("items.productId", "name price");
+      .populate("items.productId", "name price images");
 
-    // Fix discount calculation for all orders
-    for (let order of orders) {
-      // Calculate subTotal if missing
+    // 🔁 Fix old orders
+    for (const order of orders) {
       if (!order.subTotal) {
-        order.subTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        order.subTotal = order.items.reduce(
+          (sum, i) => sum + i.price * i.quantity,
+          0
+        );
       }
 
-      // For orders with coupon but no discount calculated
-      if (order.coupon && (!order.discount || order.discount === 0)) {
-        const coupon = await Coupon.findOne({ code: order.coupon });
-        if (coupon) {
-          let discount = 0;
-          if (coupon.discountType === "percentage") {
-            discount = (order.subTotal * coupon.discountValue) / 100;
-            if (coupon.maxDiscount && discount > coupon.maxDiscount) {
-              discount = coupon.maxDiscount;
-            }
-          } else {
-            discount = Math.min(coupon.discountValue, order.subTotal);
-          }
-          order.discount = discount;
-          order.totalPaid = Math.max(order.subTotal - discount, 0);
-          
-          // Save the updated order
-          try {
-            await order.save();
-          } catch (saveError) {
-            // If save fails, at least return the correct values in response
-            console.log("Could not save order:", saveError.message);
-          }
-        }
-      } else if (order.totalPaid == null) {
-        // Recalculate totalPaid if missing
-        order.totalPaid = Math.max(order.subTotal - (order.discount || 0), 0);
+      if (order.totalPaid == null) {
+        order.totalPaid = Math.max(
+          order.subTotal - (order.discount || 0),
+          0
+        );
       }
     }
 
@@ -159,62 +139,58 @@ export const getUserOrders = async (req, res) => {
   }
 };
 
-// ==========================
-// 📌 UPDATE ORDER STATUS (Admin)
-// ==========================
+/* =====================================================
+   📌 UPDATE ORDER STATUS (ADMIN)
+===================================================== */
 export const updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    const order = await Order.findByIdAndUpdate(id, { status }, { new: true });
+    const order = await Order.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
 
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    res.json({ success: true, message: "Order status updated", order });
+    res.json({
+      success: true,
+      message: "Order status updated",
+      order,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// ==========================
-// 📌 GET ALL ORDERS (Admin)
-// ==========================
+/* =====================================================
+   📌 GET ALL ORDERS (ADMIN)
+===================================================== */
 export const getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find({})
+    const orders = await Order.find()
       .sort({ createdAt: -1 })
       .populate("userId", "username email")
-      .populate("items.productId", "name price");
+      .populate("items.productId", "name price images");
 
-    // Ensure totalPaid is set for old orders
-    for (let order of orders) {
+    // 🔁 Fix legacy orders
+    for (const order of orders) {
+      if (!order.subTotal) {
+        order.subTotal = order.items.reduce(
+          (sum, i) => sum + i.price * i.quantity,
+          0
+        );
+      }
+
       if (order.totalPaid == null) {
-        // If subTotal missing, calculate from items
-        if (!order.subTotal) {
-          order.subTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        }
-        order.totalPaid = Math.max(order.subTotal - (order.discount || 0), 0);
-        // Don't save
-      } else if (order.discount == 0 && order.coupon) {
-        // Recalculate discount for old orders with coupon but no discount
-        const coupon = await Coupon.findOne({ code: order.coupon });
-        if (coupon) {
-          let discount = 0;
-          if (coupon.discountType === "percentage") {
-            discount = (order.subTotal * coupon.discountValue) / 100;
-            if (coupon.maxDiscount && discount > coupon.maxDiscount) {
-              discount = coupon.maxDiscount;
-            }
-          } else {
-            discount = coupon.discountValue;
-          }
-          order.discount = discount;
-          order.totalPaid = Math.max(order.subTotal - discount, 0);
-          await order.save();
-        }
+        order.totalPaid = Math.max(
+          order.subTotal - (order.discount || 0),
+          0
+        );
       }
     }
 

@@ -59,6 +59,15 @@ export const getCategoryBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
 
+    if (slug === "profile") {
+      return res.status(200).json({
+        _id: "profile",
+        name: "Profile",
+        slug: "profile",
+        image: null,
+      });
+    }
+
     const category = await Category.findOne({ slug });
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
