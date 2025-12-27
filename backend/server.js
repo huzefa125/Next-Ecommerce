@@ -17,15 +17,30 @@ import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import compression from "compression";
 import morgan from "morgan";
+import cookieParser from "cookie-parser";
 
 
 dotenv.config();
 
 const app = express();
 
+// Secure: hide framework info
+app.disable('x-powered-by');
+
+// Parse cookies for auth flows
+app.use(cookieParser());
+
+// CORS: allow comma-separated origins from env var (CORS_ORIGIN) or single FRONTEND_URL
+const allowedOrigins = (process.env.CORS_ORIGIN || process.env.FRONTEND_URL || "http://localhost:3000").split(',').map((s) => s.trim());
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: function (origin, callback) {
+      // allow requests with no origin (e.g., mobile apps, curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("CORS policy: Origin not allowed"));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "cache-control"],
@@ -81,7 +96,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-db.connect();
-
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+(async () => {
+  await db.connect();
+})();

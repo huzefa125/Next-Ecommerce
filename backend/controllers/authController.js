@@ -42,6 +42,16 @@ export const register = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
+    // Set token in httpOnly cookie for better security (and return it in body for backwards compatibility)
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: Number(process.env.COOKIE_EXPIRE || 7) * 24 * 60 * 60 * 1000,
+    };
+
+    res.cookie("token", token, cookieOptions);
+
     res.status(201).json({
       message: "User registered successfully",
       token,
@@ -50,8 +60,8 @@ export const register = async (req, res) => {
         username: newUser.username,
         email: newUser.email,
         role: newUser.role,
-        isCompleted: false
-      }
+        isCompleted: false,
+      },
     });
   } catch (error) {
     console.error("Registration error:", error);
@@ -98,6 +108,16 @@ export const login = async (req, res) => {
     const profile = await Profile.findOne({ user: user._id });
     const isCompleted = profile ? profile.isComplete : false;
 
+    // Set token as httpOnly cookie so client-side JS can't read it (improves security)
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: Number(process.env.COOKIE_EXPIRE || 7) * 24 * 60 * 60 * 1000,
+    };
+
+    res.cookie("token", token, cookieOptions);
+
     res.json({
       message: "Login successful",
       token,
@@ -107,7 +127,7 @@ export const login = async (req, res) => {
         email: user.email,
         role: user.role,
         isCompleted,
-      }
+      },
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -116,7 +136,7 @@ export const login = async (req, res) => {
 };
 
 export const logout = (req, res) => {
-  // Clear the token cookie
+  // Clear the token cookie server-side
   res.clearCookie("token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

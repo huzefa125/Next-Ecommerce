@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
+import getMediaUrl from "@/lib/media";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState([]);
@@ -94,9 +95,7 @@ export default function CategoriesPage() {
                     <img
                       src={
                         category.image
-                          ? category.image.startsWith("http")
-                            ? category.image
-                            : `http://localhost:5000/${category.image}`
+                          ? getMediaUrl(category.image)
                           : "https://via.placeholder.com/300x200/10b981/ffffff?text=Category"
                       }
                       className="w-full h-44 object-cover rounded-xl"

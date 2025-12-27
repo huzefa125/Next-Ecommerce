@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useContext, useState, useEffect, useRef } from "react";
 import { AuthContext } from "@/context/Authcontext";
+import getMediaUrl from "@/lib/media";
 import {
   FiSearch,
   FiUser,
@@ -142,24 +143,29 @@ export default function Navbar() {
         {/* RIGHT */}
         <div className="flex items-center gap-4">
 
-          {/* MOBILE MENU */}
-          <button className="md:hidden" onClick={() => setShowMenu(!showMenu)}>
-            {showMenu ? <FiX size={22} /> : <FiMenu size={22} />}
-          </button>
+            {/* MOBILE MENU */}
+            <button
+              className="md:hidden p-2"
+              onClick={() => setShowMenu(!showMenu)}
+              aria-label={showMenu ? "Close menu" : "Open menu"}
+              title={showMenu ? "Close menu" : "Open menu"}
+            >
+              {showMenu ? <FiX size={22} /> : <FiMenu size={22} />}
+            </button>
 
-          {/* LOGIN ICON */}
-          {!user && (
-            <Link href="/login">
-              <FiUser size={18} />
-            </Link>
-          )}
+            {/* LOGIN ICON */}
+            {!user && (
+              <Link href="/login" aria-label="Login" title="Login">
+                <FiUser size={18} />
+              </Link>
+            )}
 
           {/* IF LOGGED IN */}
           {user && (
             <>
               {/* DESKTOP CART */}
               <div className="relative hidden md:block" ref={cartRef}>
-                <button onClick={() => setShowCartMenu(!showCartMenu)}>
+                <button onClick={() => setShowCartMenu(!showCartMenu)} aria-label="Open cart" title="Open cart">
                   <FiShoppingBag size={18} />
                   {cartCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-black text-white text-[10px] px-1.5 rounded-full">
@@ -184,7 +190,7 @@ export default function Navbar() {
                                 item.product.images?.[0]
                                   ? item.product.images[0].startsWith("http")
                                     ? item.product.images[0]
-                                    : `http://localhost:5000/${item.product.images[0]}`
+                                    : getMediaUrl(item.product.images[0])
                                   : "https://via.placeholder.com/50x50?text=No+Img"
                               }
                               className="w-12 h-12 rounded object-cover"
@@ -216,7 +222,7 @@ export default function Navbar() {
               </div>
 
               {/* MOBILE CART */}
-              <Link href="/categories/cart" className="md:hidden relative">
+              <Link href="/categories/cart" className="md:hidden relative" aria-label="Open cart" title="Open cart">
                 <FiShoppingBag size={18} />
                 {cartCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-black text-white text-[10px] px-1.5 rounded-full">
@@ -272,6 +278,7 @@ export default function Navbar() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleSearchSubmit}
+              aria-label="Search products"
             />
 
             {/* SEARCH RESULTS DROPDOWN */}
@@ -282,6 +289,8 @@ export default function Navbar() {
                     key={item._id}
                     onClick={() => router.push(`/products/${item._id}`)}
                     className="p-3 border-b hover:bg-gray-100 cursor-pointer"
+                    role="button"
+                    tabIndex={0}
                   >
                     {item.name}
                   </div>
@@ -294,12 +303,12 @@ export default function Navbar() {
 
       {/* MOBILE MENU */}
       {showMenu && (
-        <div className="md:hidden bg-white border-t px-6 py-6 space-y-4 text-sm">
-          <Link href="/">HOME</Link>
-          <Link href="/products">PRODUCTS</Link>
-          <Link href="/categories">CATEGORIES</Link>
-          <Link href="/offers">OFFERS</Link>
-          <Link href="/about">ABOUT</Link>
+        <div className="md:hidden bg-white border-t px-6 py-6 space-y-4 text-sm flex flex-col">
+          <Link href="/" className="py-2">HOME</Link>
+          <Link href="/products" className="py-2">PRODUCTS</Link>
+          <Link href="/categories" className="py-2">CATEGORIES</Link>
+          <Link href="/offers" className="py-2">OFFERS</Link>
+          <Link href="/about" className="py-2">ABOUT</Link>
         </div>
       )}
     </nav>

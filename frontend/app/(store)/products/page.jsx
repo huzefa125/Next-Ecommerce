@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import Link from "next/link";
+import getMediaUrl from "@/lib/media";
 
 export default function ProductListPage() {
   const [products, setProducts] = useState([]);
@@ -142,7 +143,7 @@ export default function ProductListPage() {
                       p.images?.length
                         ? p.images[0].startsWith("http")
                           ? p.images[0]
-                          : `http://localhost:5000/${p.images[0]}`
+                          : getMediaUrl(p.images[0])
                         : "https://images.unsplash.com/photo-1603899124506-d55f65f8c52b"
                     }
                     alt={p.name}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getFeaturedProducts } from "../lib/produttApi.js";
+import getMediaUrl from "@/lib/media";
 
 export default function FeaturedProducts() {
   const [products, setProducts] = useState([]);
@@ -38,17 +39,17 @@ export default function FeaturedProducts() {
       </div>
 
       {/* HORIZONTAL SCROLL */}
-      <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide">
+      <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
         {products.map((product) => (
           <Link
             key={product._id}
             href={`/products/${product.slug}`}
-            className="min-w-[280px] max-w-[280px] bg-white rounded-2xl shadow hover:shadow-xl transition group"
+            className="min-w-[240px] md:min-w-[280px] max-w-[280px] bg-white rounded-2xl shadow hover:shadow-xl transition group snap-start"
           >
             {/* IMAGE */}
             <div className="aspect-[4/3] bg-gray-100 overflow-hidden rounded-t-2xl">
               <img
-                src={product.images?.[0]}
+                src={product.images?.[0] ? (product.images[0].startsWith('http') ? product.images[0] : getMediaUrl(product.images[0])) : undefined}
                 alt={product.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition"
               />

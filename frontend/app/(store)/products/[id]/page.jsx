@@ -6,6 +6,7 @@ import api from "@/lib/api";
 import { addTocart } from "@/lib/cartApi";
 import { toast } from "sonner";
 import { FiTruck, FiCheck, FiShield, FiPlus, FiMinus } from "react-icons/fi";
+import getMediaUrl from "@/lib/media";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -113,9 +114,11 @@ export default function ProductDetailPage() {
             <div className="border bg-white">
               <img
                 src={
-                  product.images[activeImg].startsWith("http")
-                    ? product.images[activeImg]
-                    : `http://localhost:5000/${product.images[activeImg]}`
+                  product.images?.[activeImg]
+                    ? product.images[activeImg].startsWith("http")
+                      ? product.images[activeImg]
+                      : getMediaUrl(product.images[activeImg])
+                    : "/placeholder.png"
                 }
                 className="w-full h-[520px] object-cover"
               />
@@ -131,11 +134,7 @@ export default function ProductDetailPage() {
                   }`}
                 >
                   <img
-                    src={
-                      img.startsWith("http")
-                        ? img
-                        : `http://localhost:5000/${img}`
-                    }
+                    src={img.startsWith("http") ? img : getMediaUrl(img)}
                     className="w-20 h-20 object-cover"
                   />
                 </button>

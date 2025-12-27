@@ -3,6 +3,7 @@
 import { useEffect, useState, useContext } from "react";
 import api from "@/lib/api";
 import { AuthContext } from "@/context/Authcontext";
+import getMediaUrl from "@/lib/media";
 import { toast } from "sonner";
 
 export default function AdminOrdersPage() {
@@ -120,12 +121,9 @@ export default function AdminOrdersPage() {
 
               <div className="space-y-3">
                 {order.items.map((item, index) => {
-                  const image =
-                    item.productId?.images?.[0]
-                      ? item.productId.images[0].startsWith("http")
-                        ? item.productId.images[0]
-                        : `http://localhost:5000/${item.productId.images[0]}`
-                      : "https://via.placeholder.com/80x80?text=No+Img";
+                  const image = item.productId?.images?.[0]
+                    ? getMediaUrl(item.productId.images[0])
+                    : "https://via.placeholder.com/80x80?text=No+Img";
 
                   return (
                     <div
@@ -136,6 +134,7 @@ export default function AdminOrdersPage() {
                         src={image}
                         className="w-16 h-16 object-cover rounded"
                         alt={item.productId?.name}
+                        onError={(e) => { e.target.src = "https://via.placeholder.com/80x80?text=No+Img"; }}
                       />
 
                       <div className="flex-1">

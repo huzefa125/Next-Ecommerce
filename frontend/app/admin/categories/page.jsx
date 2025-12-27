@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import api from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import getMediaUrl from "@/lib/media";
 
 export default function CategoriesPage() {
   const router = useRouter();
@@ -77,7 +78,7 @@ export default function CategoriesPage() {
   const handleEdit = (cat) => {
     setForm({ name: cat.name });
     setImage(null);
-    setImagePreview(cat.image ? (cat.image.startsWith("http") ? cat.image : `http://localhost:5000/${cat.image}`) : null);
+    setImagePreview(cat.image ? getMediaUrl(cat.image) : null);
     setEditing(cat);
   };
 
@@ -173,7 +174,7 @@ export default function CategoriesPage() {
             <div key={cat._id} className="bg-white p-6 rounded-lg shadow border hover:shadow-lg transition">
               {cat.image && (
                 <img
-                  src={cat.image.startsWith("http") ? cat.image : `http://localhost:5000/${cat.image}`}
+                  src={getMediaUrl(cat.image)}
                   alt={cat.name}
                   className="w-full h-40 object-cover rounded mb-4"
                   onError={(e) => {

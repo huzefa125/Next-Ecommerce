@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import { useParams, useRouter } from "next/navigation";
+import getMediaUrl from "@/lib/media";
 import { toast } from "sonner";
 
 export default function EditProductPage() {
@@ -206,12 +207,9 @@ export default function EditProductPage() {
             {form.images.map((img, i) => (
               <img
                 key={i}
-                src={
-                  img.startsWith("http")
-                    ? img
-                    : `http://localhost:5000/${img}`
-                }
+                src={img.startsWith("http") ? img : getMediaUrl(img)}
                 className="w-full h-28 object-cover rounded border"
+                onError={(e) => { e.target.src = "https://via.placeholder.com/300x200?text=No+Image"; }}
               />
             ))}
           </div>

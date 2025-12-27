@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import getMediaUrl from "@/lib/media";
 
 export default function Collections({ categories }) {
   return (
@@ -21,7 +22,7 @@ export default function Collections({ categories }) {
                     cat.image
                       ? cat.image.startsWith("http")
                         ? cat.image
-                        : `http://localhost:5000/${cat.image}`
+                        : getMediaUrl(cat.image)
                       : "https://via.placeholder.com/300x200/10b981/ffffff?text=Category"
                   }
                   alt={cat.name}

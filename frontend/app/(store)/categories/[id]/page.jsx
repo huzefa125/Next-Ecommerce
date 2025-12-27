@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
+import getMediaUrl from "@/lib/media";
 
 export default function CategoryViewPage() {
   const { id } = useParams();
@@ -105,13 +106,7 @@ export default function CategoryViewPage() {
       <section
         className="relative h-[320px] flex items-center justify-center bg-cover bg-center"
         style={{
-          backgroundImage: `url(${
-            category.image
-              ? category.image.startsWith("http")
-                ? category.image
-                : `http://localhost:5000/${category.image}`
-              : "linear-gradient(to right, #10b981, #3b82f6)"
-          })`,
+          backgroundImage: `url(${category.image ? getMediaUrl(category.image) : "linear-gradient(to right, #10b981, #3b82f6)"})`,
         }}
       >
         <div className="absolute inset-0 bg-black/60" />
@@ -160,12 +155,11 @@ export default function CategoryViewPage() {
                     <img
                       src={
                         product.images?.length
-                          ? product.images[0].startsWith("http")
-                            ? product.images[0]
-                            : `http://localhost:5000/${product.images[0]}`
+                          ? getMediaUrl(product.images[0])
                           : "https://via.placeholder.com/300x200/6b7280/ffffff?text=No+Image"
                       }
                       className="w-full h-44 object-cover rounded-xl"
+                      onError={(e) => { e.target.src = "https://via.placeholder.com/300x200/6b7280/ffffff?text=No+Image"; }}
                     />
                     <h3 className="mt-3 font-semibold">{product.name}</h3>
                     <p className="text-gray-500 text-sm">

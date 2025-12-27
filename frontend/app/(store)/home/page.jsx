@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
+import { getFeaturedProducts } from "@/lib/produttApi";
 import Link from "next/link";
 import CollectionList from "../../../components/CollectionList";
 import Footer from "../../../components/Footer";
@@ -15,10 +16,9 @@ export default function HomePage() {
   // Fetch featured products
   const fetchFeatured = async () => {
     try {
-      const res = await api.get("/products");
-      const products = res.data.product || res.data.products || [];
-      const filtered = products.filter((p) => p.featured === true);
-      setFeatured(filtered.slice(0, 4)); // Show up to 4 featured products
+      const res = await getFeaturedProducts();
+      const products = res.data.products || [];
+      setFeatured(products.slice(0, 4)); // Show up to 4 featured products
     } catch (error) {
       console.error("Error fetching featured:", error);
     }
@@ -44,20 +44,20 @@ export default function HomePage() {
 
       {/* ================= HERO SECTION ================= */}
       <section
-        className="relative w-full h-[520px] flex items-center justify-center bg-gradient-to-r from-blue-600 to-purple-700"
+        className="relative w-full h-[420px] sm:h-[460px] md:h-[520px] flex items-center justify-center bg-gradient-to-r from-blue-600 to-purple-700"
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/25" />
 
         <div className="relative text-center text-white max-w-3xl px-6">
-          <h1 className="text-5xl md:text-6xl font-extrabold tracking-wide">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-wide">
             Premium Steel & Utensils
           </h1>
-          <p className="mt-5 text-lg text-gray-200">
+          <p className="mt-4 sm:mt-5 text-base sm:text-lg text-gray-200">
             Crafted for durability, designed for elegance.
           </p>
 
-          <Link href="/products">
-            <button className="mt-8 bg-white text-black px-8 py-4 rounded-xl text-lg font-semibold hover:bg-gray-200 transition">
+          <Link href="/products" aria-label="Shop our collection">
+            <button className="mt-6 sm:mt-8 w-full sm:w-auto bg-white text-black px-6 py-3 sm:px-8 sm:py-4 rounded-xl text-base sm:text-lg font-semibold hover:bg-gray-200 transition">
               Shop Collection
             </button>
           </Link>

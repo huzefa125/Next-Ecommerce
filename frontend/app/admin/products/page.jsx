@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import Link from "next/link";
+import getMediaUrl from "@/lib/media";
 import { FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
 import { toast } from "sonner";
 
@@ -84,14 +85,13 @@ export default function AdminProductsPage() {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <img
   src={
-    item.productId?.images?.length
-      ? item.productId.images[0].startsWith("http")
-        ? item.productId.images[0]
-        : `http://localhost:5000/${item.productId.images[0]}`
+    product.images?.length
+      ? getMediaUrl(product.images[0])
       : "https://via.placeholder.com/80x80?text=No+Image"
   }
-  alt={item.productId?.name || "Product"}
+  alt={product.name || "Product"}
   className="w-16 h-16 object-cover rounded"
+  onError={(e) => { e.target.src = "https://via.placeholder.com/80x80?text=No+Image"; }}
 />
 
                 </td>
